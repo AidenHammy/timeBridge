@@ -1,0 +1,11 @@
+{
+  "name": "chrono-test",
+  "version": "1.0.0",
+  "description": "Scratchpad to test and bundle chrono-node",
+  "dependencies": {
+    "chrono-node": "^2.7.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.5"
+  }
+}

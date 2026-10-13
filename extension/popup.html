@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>TimeBridge</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+
+<body>
+  <h1>TimeBridge</h1>
+  <p class="subtitle">Add the people you message across timezones.</p>
+
+  <!-- Simple form to add a contact -->
+  <form id="add-contact-form">
+    <input type="text" id="contact-name" placeholder="Name" autocomplete="off" required />
+    <select id="contact-timezone" required>
+      <option value="" disabled selected>Choose timezone..</option>
+    </select>
+    <button type="submit">Add contact</button>
+    <p id="form-error" class="error" hidden></p>
+  </form>
+
+  <ul id="contact-list"></ul>
+  <p id="empty-state" class="empty-state" hidden>
+    No contacts yet. Add someone above to see their local time.
+  </p>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>

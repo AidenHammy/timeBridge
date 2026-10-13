@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "TimeBridge",
+  "version": "1.0",
+  "description": "Convert times across timezones right in your chat box.",
+  "permissions": [
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "vendor/chrono.bundle.js",
+        "content.js"
+      ]
+    }
+  ]
+}

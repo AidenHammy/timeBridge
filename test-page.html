@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>TimeBridge test page</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 480px;
+      margin: 60px auto;
+    }
+
+    textarea,
+    div[contenteditable] {
+      width: 100%;
+      min-height: 80px;
+      font-size: 14px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>TimeBridge test page</h2>
+  <p>Open DevTools console then type a phrase like "let's call tomorrow at 3pm" below</p>
+
+  <label>Plain textarea:</label>
+  <textarea placeholder="Type here.."></textarea>
+
+  <label>Contenteditable div (simulates Gmail/Slack-style editors):</label>
+  <div contenteditable="true">Type here...</div>
+</body>
+
+</html>

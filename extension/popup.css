@@ -1,0 +1,124 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  width: 280px;
+  margin: 0;
+  padding: 16px;
+  background: #fafafa;
+  color: #1a1a1a;
+}
+
+h1 {
+  font-size: 15px;
+  margin: 0 0 2px;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #777;
+  margin: 0 0 14px;
+}
+
+#add-contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+input,
+select {
+  font-size: 13px;
+  padding: 7px 8px;
+  border: 1px solid #d6d6d6;
+  border-radius: 6px;
+  background: #fff;
+}
+
+input:focus,
+select:focus,
+button:focus {
+  outline: 2px solid #3a6ff0;
+  outline-offset: 1px;
+}
+
+button {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  background: #1a1a1a;
+  color: #fff;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #333;
+}
+
+.error {
+  font-size: 12px;
+  color: #c0392b;
+  margin: 0;
+}
+
+#contact-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contact-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid #ececec;
+  border-radius: 6px;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.contact-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.contact-time {
+  font-size: 11px;
+  color: #777;
+}
+
+.delete-btn {
+  background: none;
+  color: #aaa;
+  font-size: 16px;
+  padding: 0 4px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  color: #c0392b;
+  background: none;
+}
+
+.empty-state {
+  font-size: 12px;
+  color: #999;
+  text-align: center;
+  padding: 16px 0;
+  margin: 0;
+}

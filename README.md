@@ -6,6 +6,8 @@ TimeBridge is a Chrome extension that watches as you type in chat apps like Slac
 
 Click it and it'll tell you exactly what time that is for the people you're messaging, right where you're already typing. No more opening a new tab for a timezone converter.
 
+[📦 **Download TimeBridge (ZIP)**](https://github.com/AidenHammy/TimeBridge/archive/refs/heads/main.zip) · [🐛 **Report an Issue**](https://github.com/AidenHammy/TimeBridge/issues)
+
 ## Features
 
 - **Live Text Parsing** -> Uses `chrono-node` to understand natural language. It catches phrases like *"tomorrow at 3pm"*, *"next Tuesday at noon"* or *"in 2 hours"*. A 250ms debounce keeps it from parsing every single keystroke.
@@ -22,15 +24,47 @@ Click it and it'll tell you exactly what time that is for the people you're mess
 4. Pause typing for a moment, you'll see a small clock icon appear below your text box.
 5. Click the icon to expand the panel and see what time that translates to for your contact.
 
-## Installation (For Developers)
+### TimeBridge working inside Gmail
+![TimeBridge working inside Gmail](./images/gmail.png?raw=true)
 
-TimeBridge isn't on the Chrome Web Store yet but you can run it locally in a few minutes.
+### TimeBridge inside Slack
+![TimeBridge inside Slack](./images/slack.png?raw=true)
 
-### Step 1: Generate the Parser Bundle
+### TimeBridge functioning inside WhatsApp Web
+![TimeBridge functioning inside WhatsApp Web](./images/whatsapp.png?raw=true)
 
-TimeBridge uses `chrono-node` for natural language parsing but the library needs to be bundled for the browser.
+## Permissions
+TimeBridge is built to be as privacy-friendly as possible. Here is exactly what permissions it needs and why~
 
-Open a terminal and navigate to the `chrono-test` directory:
+- storage: Used to save your contacts list and your site allowlist locally in your browser. Surprise nothing syncs to the cloud.
+- activeTab: Used only when you click the "+ Add current site" button in the popup, allowing the extension to read the URL of the tab you're currently on so it can add it to your allowlist.
+- Note on <all_urls>: The manifest requests access to all URLs so the extension can physically run on whatever chat apps you decide to add to your allowlist. However, the content script is designed to do absolutely nothing on sites that aren't explicitly in your allowlist.
+
+## How to Install (Takes 1 Minute)
+
+Since TimeBridge isn't on the Chrome Web Store yet, you'll need to install it manually from the source code.
+
+1. Click **Code → Download ZIP** on the GitHub repository page.
+2. Extract the downloaded ZIP file somewhere convenient, like your Desktop or Downloads folder.
+3. Open Chrome and navigate to `chrome://extensions`.
+4. Enable **Developer mode** using the toggle in the top-right corner.
+5. Click **Load unpacked** in the top-left corner.
+6. Select the `extension/` folder inside the directory you just extracted.
+7. Pin the TimeBridge icon to your browser toolbar, add your contacts and you're good to go!
+
+> **Note:** To test TimeBridge on local `file://` pages, open the extension's **Details** page in Chrome and enable **Allow access to file URLs**.
+
+## For Developers (Building from Source)
+
+Want to modify the code or regenerate the natural-language parser yourself? You'll need [Node.js](https://nodejs.org/) installed.
+
+### 1. Clone the Repository
+
+Clone the repository and navigate into the project directory.
+
+### 2. Install Dependencies
+
+Navigate to the `chrono-test/` directory:
 
 ```bash
 cd chrono-test
@@ -42,20 +76,17 @@ Install the dependencies:
 npm install
 ```
 
-Run `esbuild` to generate the bundle inside the extension folder:
+### 3. Build the Parser Bundle
+
+Run `esbuild` to generate the parser bundle inside the extension folder:
 
 ```bash
 npx esbuild bundle-entry.js --bundle --minify --outfile=../extension/vendor/chrono.bundle.js
 ```
 
-### Step 2: Load the Extension
+### 4. Test Your Changes
 
-1. Open `chrome://extensions` in Chrome.
-2. Enable **Developer mode** using the toggle in the top-right corner.
-3. Click **Load unpacked** and select the `extension/` folder.
-4. Pin the TimeBridge icon to your browser toolbar and start adding contacts!
-
-> **Note:** To test the extension on local `file://` pages, open the extension's Details page and enable **Allow access to file URLs**.
+Make your changes to the code, open `chrome://extensions` in Chrome and click the **Reload** button on the TimeBridge extension card to test your latest build!
 
 ## How It Works (Under the Hood)
 

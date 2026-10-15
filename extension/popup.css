@@ -4,21 +4,35 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  width: 280px;
+  width: 300px;
   margin: 0;
   padding: 16px;
   background: #fafafa;
   color: #1a1a1a;
 }
 
+.tb-header {
+  margin-bottom: 2px;
+}
+
 h1 {
   font-size: 15px;
-  margin: 0 0 2px;
+  font-weight: 700;
+  margin: 0;
+}
+
+h2 {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #999;
+  margin: 0 0 8px;
 }
 
 .subtitle {
   font-size: 12px;
-  color: #777;
+  color: #888;
   margin: 0 0 14px;
 }
 
@@ -29,18 +43,16 @@ h1 {
   margin-bottom: 16px;
 }
 
-input,
-select {
+input {
   font-size: 13px;
   padding: 7px 8px;
   border: 1px solid #d6d6d6;
   border-radius: 6px;
   background: #fff;
+  width: 100%;
 }
 
-input:focus,
-select:focus,
-button:focus {
+input:focus {
   outline: 2px solid #3a6ff0;
   outline-offset: 1px;
 }
@@ -58,6 +70,11 @@ button {
 
 button:hover {
   background: #333;
+}
+
+button:focus {
+  outline: 2px solid #3a6ff0;
+  outline-offset: 1px;
 }
 
 .error {
@@ -94,7 +111,6 @@ button:hover {
   font-size: 12px;
   display: flex;
   justify-content: space-between;
-  gap: 8px;
 }
 
 .tz-result:hover,
@@ -120,16 +136,24 @@ button:hover {
   color: #999;
 }
 
-#contact-list {
+.divider {
+  border: none;
+  border-top: 1px solid #ebebeb;
+  margin: 16px 0 14px;
+}
+
+#contact-list,
+#sites-list {
   list-style: none;
-  margin: 0;
+  margin: 0 0 4px;
   padding: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.contact-row {
+.contact-row,
+.site-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -148,6 +172,10 @@ button:hover {
 .contact-name {
   font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .contact-time {
@@ -155,22 +183,57 @@ button:hover {
   color: #777;
 }
 
+.site-domain {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: #444;
+}
+
 .delete-btn {
   background: none;
-  color: #aaa;
-  font-size: 16px;
-  padding: 0 4px;
-  cursor: pointer;
+  color: #bbb;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
 .delete-btn:hover {
+  background: #fef2f2;
   color: #c0392b;
 }
 
 .empty-state {
   font-size: 12px;
-  color: #999;
+  color: #bbb;
   text-align: center;
-  padding: 16px 0;
-  margin: 0;
+  padding: 12px 0 4px;
+}
+
+.add-site-row {
+  margin-bottom: 8px;
+}
+
+#add-current-site {
+  width: 100%;
+  background: #fff;
+  color: #1a1a1a;
+  border: 1px solid #d6d6d6;
+  font-weight: 500;
+}
+
+#add-current-site:hover {
+  background: #f5f5f5;
+}
+
+.manual-site-form {
+  display: flex;
+  gap: 6px;
+}
+
+.manual-site-form input {
+  flex: 1;
+}
+
+.manual-site-form button {
+  padding: 7px 12px;
 }

@@ -1,4 +1,4 @@
-// handles the contact form, custom timezone combobox and list rendering
+// Handles the contact form, custom timezone combobox and site allowlist
 
 const FALLBACK_TIMEZONES = [
   "UTC", "America/New_York", "America/Chicago", "America/Denver",
@@ -57,8 +57,9 @@ const TZ_ALIASES = {
   gmt: ["UTC"], utc: ["UTC"],
 };
 
+const DEFAULT_ENABLED_SITES = ["whatsapp.com", "slack.com", "mail.google.com"];
+
 function getTimezoneList() {
-  // Use native API if it exists, otherwise fall back
   if (typeof Intl !== "undefined" && typeof Intl.supportedValuesOf === "function") {
     try {
       return Intl.supportedValuesOf("timeZone");
@@ -69,9 +70,7 @@ function getTimezoneList() {
   return FALLBACK_TIMEZONES;
 }
 
-function cityLabel(id) {
-  return id.split("/").pop().replace(/_/g, " ");
-}
+function cityLabel(id) { return id.split("/").pop().replace(/_/g, " "); }
 
 function offsetLabel(id) {
   try {
@@ -118,7 +117,6 @@ function searchTimezones(query) {
     }
   }
   
-  // Check aliases first
   for (let alias in TZ_ALIASES) {
     if (alias.includes(q) || q.includes(alias)) {
       let candidates = TZ_ALIASES[alias];
@@ -134,8 +132,6 @@ function searchTimezones(query) {
   for (let i = 0; i < TZ_INDEX.length; i++) {
     if (TZ_INDEX[i].city.toLowerCase().startsWith(q)) add(TZ_INDEX[i].id);
   }
-  
-  // Check full id includes
   for (let i = 0; i < TZ_INDEX.length; i++) {
     if (TZ_INDEX[i].searchableId.includes(q)) add(TZ_INDEX[i].id);
   }
@@ -206,7 +202,7 @@ function setupTimezoneCombobox() {
   let resultsList = document.getElementById("tz-results");
   
   searchInput.addEventListener("input", function() {
-    hiddenValue.value = ""; // Invalidate previous selection on manual typing
+    hiddenValue.value = "";
     renderResults(searchTimezones(searchInput.value));
   });
   
@@ -230,13 +226,135 @@ function setupTimezoneCombobox() {
     }
   });
   
-  // Hide dropdown if clicking outside
   document.addEventListener("click", function(e) {
     if (!e.target.closest(".tz-combobox")) {
       resultsList.hidden = true;
     }
   });
 }
+
+function getEnabledSites() {
+  return new Promise(function(resolve) {
+    chrome.storage.local.get(["enabledSites"], function(result) {
+      if (result.enabledSites) {
+        resolve(result.enabledSites);
+      } else {
+        chrome.storage.local.set({ enabledSites: DEFAULT_ENABLED_SITES }, function() {
+          resolve(DEFAULT_ENABLED_SITES);
+        });
+      }
+    });
+  });
+}
+
+function saveEnabledSites(sites) {
+  return new Promise(function(resolve) {
+    chrome.storage.local.set({ enabledSites: sites }, resolve);
+  });
+}
+
+function extractHostname(url) {
+  try {
+    return new URL(url).hostname;
+  } catch (e) {
+    return null;
+  }
+}
+
+function looksLikeValidDomain(hostname) {
+  return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(hostname);
+}
+
+function addSite(rawInput) {
+  let trimmed = rawInput.trim();
+  if (!trimmed) return { ok: false, error: "Enter a domain." };
+  
+  let hostname = (extractHostname(trimmed) || extractHostname("https://" + trimmed) || trimmed).toLowerCase();
+  
+  if (!looksLikeValidDomain(hostname)) {
+    return { ok: false, error: '"' + trimmed + '" doesn\'t look like a valid domain.' };
+  }
+  
+  return getEnabledSites().then(function(sites) {
+    if (sites.includes(hostname)) {
+      return { ok: false, error: '"' + hostname + '" is already in the list.' };
+    }
+    sites.push(hostname);
+    return saveEnabledSites(sites).then(function() {
+      return { ok: true };
+    });
+  });
+}
+
+function showSiteError(msg) {
+  let el = document.getElementById("site-error");
+  el.textContent = msg;
+  el.hidden = false;
+}
+
+function setupSiteManagement() {
+  document.getElementById("add-current-site").addEventListener("click", function() {
+    document.getElementById("site-error").hidden = true;
+    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+      let tab = tabs[0];
+      if (!tab || !tab.url) {
+        showSiteError("Couldn't read the current tab's URL.");
+        return;
+      }
+      addSite(tab.url).then(function(result) {
+        if (!result.ok) showSiteError(result.error);
+      });
+    });
+  });
+  
+  document.getElementById("add-site-form").addEventListener("submit", function(e) {
+    e.preventDefault();
+    document.getElementById("site-error").hidden = true;
+    let input = document.getElementById("manual-site-input");
+    addSite(input.value).then(function(result) {
+      if (result.ok) {
+        input.value = "";
+      } else {
+        showSiteError(result.error);
+      }
+    });
+  });
+}
+
+async function renderSites() {
+  let sites = await getEnabledSites();
+  let list = document.getElementById("sites-list");
+  list.innerHTML = "";
+  
+  for (let i = 0; i < sites.length; i++) {
+    let site = sites[i];
+    let li = document.createElement("li");
+    li.className = "site-row";
+    
+    let label = document.createElement("span");
+    label.className = "site-domain";
+    label.textContent = site;
+    
+    let removeBtn = document.createElement("button");
+    removeBtn.className = "delete-btn";
+    removeBtn.textContent = "✕";
+    removeBtn.setAttribute("data-site", site);
+    
+    li.appendChild(label);
+    li.appendChild(removeBtn);
+    list.appendChild(li);
+  }
+}
+
+document.getElementById("sites-list").addEventListener("click", async function(e) {
+  if (e.target && e.target.classList.contains("delete-btn")) {
+    let site = e.target.getAttribute("data-site");
+    let sites = await getEnabledSites();
+    sites = sites.filter(function(s) { return s !== site; });
+    await saveEnabledSites(sites);
+    renderSites();
+  }
+});
 
 function getContacts() {
   return new Promise(function(resolve) {
@@ -265,7 +383,7 @@ function formatLocalTime(timezone) {
   }
 }
 
-async function render() {
+async function renderContacts() {
   let contacts = await getContacts();
   let list = document.getElementById("contact-list");
   let emptyState = document.getElementById("empty-state");
@@ -313,7 +431,7 @@ document.getElementById("contact-list").addEventListener("click", async function
     let contacts = await getContacts();
     contacts = contacts.filter(function(c) { return c.id !== id; });
     await saveContacts(contacts);
-    render();
+    renderContacts();
   }
 });
 
@@ -323,15 +441,20 @@ function showError(msg) {
   errorEl.hidden = false;
 }
 
+function generateId() {
+  return String(Date.now()) + Math.random().toString(36).substr(2, 5);
+}
+
 document.addEventListener("DOMContentLoaded", function() {
   buildTimezoneIndex();
   setupTimezoneCombobox();
-  render();
+  renderContacts();
+  renderSites();
+  setupSiteManagement();
   
   document.getElementById("add-contact-form").addEventListener("submit", async function(e) {
     e.preventDefault();
-    let errorEl = document.getElementById("form-error");
-    errorEl.hidden = true;
+    document.getElementById("form-error").hidden = true;
     
     let nameInput = document.getElementById("contact-name");
     let timezone = document.getElementById("tz-value").value;
@@ -348,16 +471,14 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
     
-    let id = String(Date.now()) + Math.random().toString(36).substr(2, 5);
-    contacts.push({ id: id, name: name, timezone: timezone });
-    
+    contacts.push({ id: generateId(), name: name, timezone: timezone });
     await saveContacts(contacts);
     
     nameInput.value = "";
     document.getElementById("tz-search").value = "";
     document.getElementById("tz-value").value = "";
-    render();
+    renderContacts();
   });
   
-  setInterval(render, 30000);
+  setInterval(renderContacts, 30000);
 });

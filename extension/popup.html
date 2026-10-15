@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <meta charset="utf-8" />
@@ -8,26 +8,38 @@
 </head>
 
 <body>
-  <h1>TimeBridge</h1>
-  <p class="subtitle">Add the people you message across timezones.</p>
+  <div class="tb-header">
+    <h1>TimeBridge</h1>
+  </div>
+  <p class="subtitle">See local time as you type, on sites you choose.</p>
 
+  <h2>Contacts</h2>
   <form id="add-contact-form">
     <input type="text" id="contact-name" placeholder="Name" autocomplete="off" required />
-
     <div class="tz-combobox">
       <input type="text" id="tz-search" placeholder="Search city, country, or zone…" autocomplete="off" />
       <input type="hidden" id="tz-value" />
       <ul id="tz-results" class="tz-results" hidden></ul>
     </div>
-
     <button type="submit">Add contact</button>
     <p id="form-error" class="error" hidden></p>
   </form>
 
   <ul id="contact-list"></ul>
-  <p id="empty-state" class="empty-state" hidden>
-    No contacts yet. Add someone above to see their local time.
-  </p>
+  <p id="empty-state" class="empty-state" hidden>No contacts yet, add one above.</p>
+
+  <hr class="divider" />
+
+  <h2>Active on</h2>
+  <ul id="sites-list"></ul>
+  <div class="add-site-row">
+    <button id="add-current-site" type="button">+ Add current site</button>
+  </div>
+  <form id="add-site-form" class="manual-site-form">
+    <input type="text" id="manual-site-input" placeholder="discord.com" autocomplete="off" />
+    <button type="submit">Add</button>
+  </form>
+  <p id="site-error" class="error" hidden></p>
 
   <script src="popup.js"></script>
 </body>

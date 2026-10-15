@@ -66,6 +66,60 @@ button:hover {
   margin: 0;
 }
 
+.tz-combobox {
+  position: relative;
+}
+
+.tz-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin: 2px 0 0;
+  padding: 4px;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #d6d6d6;
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.tz-result {
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tz-result:hover,
+.tz-result.highlighted {
+  background: #eef2ff;
+}
+
+.tz-result-city {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tz-result-meta {
+  color: #888;
+  white-space: nowrap;
+}
+
+.tz-no-results {
+  padding: 6px 8px;
+  font-size: 12px;
+  color: #999;
+}
+
 #contact-list {
   list-style: none;
   margin: 0;
@@ -106,13 +160,11 @@ button:hover {
   color: #aaa;
   font-size: 16px;
   padding: 0 4px;
-  line-height: 1;
   cursor: pointer;
 }
 
 .delete-btn:hover {
   color: #c0392b;
-  background: none;
 }
 
 .empty-state {

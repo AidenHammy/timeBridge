@@ -1,124 +1,363 @@
-// Handles adding contacts, saving them and keeping their local times updated
+// handles the contact form, custom timezone combobox and list rendering
 
-const form = document.getElementById("add-contact-form");
-const nameInput = document.getElementById("contact-name");
-const tzSelect = document.getElementById("contact-timezone");
-const contactList = document.getElementById("contact-list");
-const emptyState = document.getElementById("empty-state");
-const errorText = document.getElementById("form-error");
+const FALLBACK_TIMEZONES = [
+  "UTC", "America/New_York", "America/Chicago", "America/Denver",
+  "America/Los_Angeles", "America/Sao_Paulo", "Europe/London",
+  "Europe/Paris", "Europe/Berlin", "Europe/Moscow", "Africa/Cairo",
+  "Africa/Johannesburg", "Asia/Dubai", "Asia/Kolkata", "Asia/Dhaka",
+  "Asia/Bangkok", "Asia/Singapore", "Asia/Shanghai", "Asia/Tokyo",
+  "Asia/Seoul", "Australia/Sydney", "Pacific/Auckland",
+];
 
-// Grabs real IANA timezones from the browser and falls back to a short list if the browser is old
-let timezones = [];
-try {
-  timezones = Intl.supportedValuesOf("timeZone");
-} catch (e) {
-  timezones = ["UTC", "America/New_York", "Europe/London", "Asia/Tokyo"];
+const TZ_ALIASES = {
+  india: ["Asia/Kolkata", "Asia/Calcutta"],
+  ist: ["Asia/Kolkata", "Asia/Calcutta"],
+  kolkata: ["Asia/Kolkata", "Asia/Calcutta"],
+  calcutta: ["Asia/Kolkata", "Asia/Calcutta"],
+  japan: ["Asia/Tokyo"],
+  uk: ["Europe/London"], britain: ["Europe/London"], england: ["Europe/London"],
+  germany: ["Europe/Berlin"],
+  france: ["Europe/Paris"],
+  spain: ["Europe/Madrid"],
+  italy: ["Europe/Rome"],
+  brazil: ["America/Sao_Paulo"],
+  china: ["Asia/Shanghai"],
+  australia: ["Australia/Sydney"],
+  mexico: ["America/Mexico_City"],
+  "south africa": ["Africa/Johannesburg"],
+  korea: ["Asia/Seoul"], "south korea": ["Asia/Seoul"],
+  thailand: ["Asia/Bangkok"],
+  indonesia: ["Asia/Jakarta"],
+  pakistan: ["Asia/Karachi"],
+  bangladesh: ["Asia/Dhaka"],
+  vietnam: ["Asia/Ho_Chi_Minh", "Asia/Saigon"],
+  saigon: ["Asia/Ho_Chi_Minh", "Asia/Saigon"],
+  "ho chi minh": ["Asia/Ho_Chi_Minh", "Asia/Saigon"],
+  philippines: ["Asia/Manila"],
+  egypt: ["Africa/Cairo"],
+  nigeria: ["Africa/Lagos"],
+  kenya: ["Africa/Nairobi"],
+  turkey: ["Europe/Istanbul"],
+  netherlands: ["Europe/Amsterdam"], holland: ["Europe/Amsterdam"],
+  sweden: ["Europe/Stockholm"],
+  norway: ["Europe/Oslo"],
+  poland: ["Europe/Warsaw"],
+  ireland: ["Europe/Dublin"],
+  portugal: ["Europe/Lisbon"],
+  switzerland: ["Europe/Zurich"],
+  "new zealand": ["Pacific/Auckland"], nz: ["Pacific/Auckland"],
+  israel: ["Asia/Jerusalem"],
+  "saudi arabia": ["Asia/Riyadh"],
+  argentina: ["America/Argentina/Buenos_Aires", "America/Buenos_Aires"],
+  chile: ["America/Santiago"],
+  colombia: ["America/Bogota"],
+  peru: ["America/Lima"],
+  est: ["America/New_York"], pst: ["America/Los_Angeles"],
+  cst: ["America/Chicago"], mst: ["America/Denver"],
+  gmt: ["UTC"], utc: ["UTC"],
+};
+
+function getTimezoneList() {
+  // Use native API if it exists, otherwise fall back
+  if (typeof Intl !== "undefined" && typeof Intl.supportedValuesOf === "function") {
+    try {
+      return Intl.supportedValuesOf("timeZone");
+    } catch (e) {
+      return FALLBACK_TIMEZONES;
+    }
+  }
+  return FALLBACK_TIMEZONES;
 }
 
-timezones.forEach(tz => {
-  let opt = document.createElement("option");
-  opt.value = tz;
-  opt.textContent = tz.replace(/_/g, " ");
-  tzSelect.appendChild(opt);
-});
+function cityLabel(id) {
+  return id.split("/").pop().replace(/_/g, " ");
+}
+
+function offsetLabel(id) {
+  try {
+    let parts = new Intl.DateTimeFormat("en", {
+      timeZone: id,
+      timeZoneName: "shortOffset",
+    }).formatToParts(new Date());
+    let part = parts.find(function(p) { return p.type === "timeZoneName"; });
+    return part ? part.value : "";
+  } catch (e) {
+    return "";
+  }
+}
+
+let TZ_INDEX = [];
+
+function buildTimezoneIndex() {
+  let zones = getTimezoneList();
+  if (!zones.includes("UTC")) zones.unshift("UTC");
+  
+  TZ_INDEX = zones.map(function(id) {
+    return {
+      id: id,
+      city: cityLabel(id),
+      searchableId: id.toLowerCase().replace(/_/g, " "),
+      offset: offsetLabel(id),
+    };
+  });
+}
+
+function searchTimezones(query) {
+  let q = query.trim().toLowerCase();
+  if (!q) return [];
+  
+  let results = [];
+  let seen = new Set();
+  
+  function add(id) {
+    if (seen.has(id)) return;
+    let entry = TZ_INDEX.find(function(e) { return e.id === id; });
+    if (entry) {
+      seen.add(id);
+      results.push(entry);
+    }
+  }
+  
+  // Check aliases first
+  for (let alias in TZ_ALIASES) {
+    if (alias.includes(q) || q.includes(alias)) {
+      let candidates = TZ_ALIASES[alias];
+      for (let i = 0; i < candidates.length; i++) {
+        if (TZ_INDEX.some(function(e) { return e.id === candidates[i]; })) {
+          add(candidates[i]);
+          break;
+        }
+      }
+    }
+  }
+  
+  for (let i = 0; i < TZ_INDEX.length; i++) {
+    if (TZ_INDEX[i].city.toLowerCase().startsWith(q)) add(TZ_INDEX[i].id);
+  }
+  
+  // Check full id includes
+  for (let i = 0; i < TZ_INDEX.length; i++) {
+    if (TZ_INDEX[i].searchableId.includes(q)) add(TZ_INDEX[i].id);
+  }
+  
+  return results.slice(0, 8);
+}
+
+let highlightedIndex = -1;
+let currentResults = [];
+
+function renderResults(results) {
+  currentResults = results;
+  highlightedIndex = -1;
+  let list = document.getElementById("tz-results");
+  list.innerHTML = "";
+  
+  if (results.length === 0) {
+    let li = document.createElement("li");
+    li.className = "tz-no-results";
+    li.textContent = "No matches—try a city or country";
+    list.appendChild(li);
+    list.hidden = false;
+    return;
+  }
+  
+  results.forEach(function(entry, i) {
+    let li = document.createElement("li");
+    li.className = "tz-result";
+    li.dataset.index = i;
+    
+    let city = document.createElement("span");
+    city.className = "tz-result-city";
+    city.textContent = entry.city;
+    
+    let meta = document.createElement("span");
+    meta.className = "tz-result-meta";
+    meta.textContent = entry.offset + " · " + entry.id;
+    
+    li.appendChild(city);
+    li.appendChild(meta);
+    li.onclick = function() { selectTimezone(entry); };
+    list.appendChild(li);
+  });
+  
+  list.hidden = false;
+}
+
+function selectTimezone(entry) {
+  document.getElementById("tz-search").value = entry.city + " (" + entry.id + ")";
+  document.getElementById("tz-value").value = entry.id;
+  document.getElementById("tz-results").hidden = true;
+}
+
+function updateHighlight() {
+  let items = document.querySelectorAll(".tz-result");
+  items.forEach(function(el, i) {
+    if (i === highlightedIndex) {
+      el.classList.add("highlighted");
+    } else {
+      el.classList.remove("highlighted");
+    }
+  });
+}
+
+function setupTimezoneCombobox() {
+  let searchInput = document.getElementById("tz-search");
+  let hiddenValue = document.getElementById("tz-value");
+  let resultsList = document.getElementById("tz-results");
+  
+  searchInput.addEventListener("input", function() {
+    hiddenValue.value = ""; // Invalidate previous selection on manual typing
+    renderResults(searchTimezones(searchInput.value));
+  });
+  
+  searchInput.addEventListener("keydown", function(e) {
+    if (resultsList.hidden || currentResults.length === 0) return;
+    
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      highlightedIndex = Math.min(highlightedIndex + 1, currentResults.length - 1);
+      updateHighlight();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      highlightedIndex = Math.max(highlightedIndex - 1, 0);
+      updateHighlight();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      let pick = currentResults[highlightedIndex >= 0 ? highlightedIndex : 0];
+      if (pick) selectTimezone(pick);
+    } else if (e.key === "Escape") {
+      resultsList.hidden = true;
+    }
+  });
+  
+  // Hide dropdown if clicking outside
+  document.addEventListener("click", function(e) {
+    if (!e.target.closest(".tz-combobox")) {
+      resultsList.hidden = true;
+    }
+  });
+}
 
 function getContacts() {
-  return new Promise(resolve => {
-    chrome.storage.local.get({ contacts: [] }, (data) => resolve(data.contacts));
+  return new Promise(function(resolve) {
+    chrome.storage.local.get(["contacts"], function(result) {
+      resolve(result.contacts || []);
+    });
   });
 }
 
 function saveContacts(contacts) {
-  return new Promise(resolve => {
+  return new Promise(function(resolve) {
     chrome.storage.local.set({ contacts: contacts }, resolve);
   });
 }
 
-// Draw the list of contacts
-async function renderContacts() {
+function formatLocalTime(timezone) {
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      timeZone: timezone,
+      hour: "numeric",
+      minute: "2-digit",
+      weekday: "short",
+    }).format(new Date());
+  } catch (e) {
+    return "unknown";
+  }
+}
+
+async function render() {
   let contacts = await getContacts();
-  contactList.innerHTML = "";
+  let list = document.getElementById("contact-list");
+  let emptyState = document.getElementById("empty-state");
+  list.innerHTML = "";
   
   if (contacts.length === 0) {
     emptyState.hidden = false;
     return;
   }
   emptyState.hidden = true;
-
-  contacts.forEach(c => {
+  
+  for (let i = 0; i < contacts.length; i++) {
+    let c = contacts[i];
     let li = document.createElement("li");
     li.className = "contact-row";
     
-    let timeStr;
-    try {
-      timeStr = new Intl.DateTimeFormat(undefined, {
-        timeZone: c.timezone,
-        hour: "numeric",
-        minute: "2-digit",
-        weekday: "short"
-      }).format(new Date());
-    } catch (e) {
-      timeStr = "Unknown time";
-    }
-
-    li.innerHTML = `
-      <div class="contact-info">
-        <span class="contact-name">${c.name}</span>
-        <span class="contact-time">${timeStr} - ${c.timezone.replace(/_/g, " ")}</span>
-      </div>
-      <button class="delete-btn" data-id="${c.id}">✕</button>
-    `;
-    contactList.appendChild(li);
-  });
+    let info = document.createElement("div");
+    info.className = "contact-info";
+    
+    let name = document.createElement("span");
+    name.className = "contact-name";
+    name.textContent = c.name;
+    
+    let time = document.createElement("span");
+    time.className = "contact-time";
+    time.textContent = formatLocalTime(c.timezone) + " · " + c.timezone.replace(/_/g, " ");
+    
+    info.appendChild(name);
+    info.appendChild(time);
+    
+    let deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete-btn";
+    deleteBtn.textContent = "✕";
+    deleteBtn.setAttribute("data-id", c.id);
+    
+    li.appendChild(info);
+    li.appendChild(deleteBtn);
+    list.appendChild(li);
+  }
 }
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  errorText.hidden = true;
-
-  let name = nameInput.value.trim();
-  let tz = tzSelect.value;
-
-  if (!name || !tz) {
-    errorText.textContent = "Please enter a name and pick a timezone.";
-    errorText.hidden = false;
-    return;
-  }
-
-  let contacts = await getContacts();
-  
-  let dupe = contacts.some(c => c.name.toLowerCase() === name.toLowerCase());
-  if (dupe) {
-    errorText.textContent = `"${name}" is already in your list.`;
-    errorText.hidden = false;
-    return;
-  }
-
-  // Add new contact using Date.now() for a quick unique ID
-  contacts.push({
-    id: Date.now().toString(),
-    name: name,
-    timezone: tz
-  });
-
-  await saveContacts(contacts);
-  
-  nameInput.value = "";
-  tzSelect.value = "";
-  renderContacts();
-});
-
-contactList.addEventListener("click", async (e) => {
-  if (e.target.classList.contains("delete-btn")) {
+document.getElementById("contact-list").addEventListener("click", async function(e) {
+  if (e.target && e.target.classList.contains("delete-btn")) {
     let id = e.target.getAttribute("data-id");
     let contacts = await getContacts();
-    contacts = contacts.filter(c => c.id !== id);
+    contacts = contacts.filter(function(c) { return c.id !== id; });
     await saveContacts(contacts);
-    renderContacts();
+    render();
   }
 });
 
-document.addEventListener("DOMContentLoaded", () => {
-  renderContacts();
-  setInterval(renderContacts, 30000);
+function showError(msg) {
+  let errorEl = document.getElementById("form-error");
+  errorEl.textContent = msg;
+  errorEl.hidden = false;
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  buildTimezoneIndex();
+  setupTimezoneCombobox();
+  render();
+  
+  document.getElementById("add-contact-form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    let errorEl = document.getElementById("form-error");
+    errorEl.hidden = true;
+    
+    let nameInput = document.getElementById("contact-name");
+    let timezone = document.getElementById("tz-value").value;
+    let name = nameInput.value.trim();
+    
+    if (!name) { showError("Enter a name."); return; }
+    if (!timezone) { showError("Pick a timezone from the dropdown."); return; }
+    
+    let contacts = await getContacts();
+    
+    let dupe = contacts.some(function(c) { return c.name.toLowerCase() === name.toLowerCase(); });
+    if (dupe) {
+      showError('"' + name + '" is already in your list.');
+      return;
+    }
+    
+    let id = String(Date.now()) + Math.random().toString(36).substr(2, 5);
+    contacts.push({ id: id, name: name, timezone: timezone });
+    
+    await saveContacts(contacts);
+    
+    nameInput.value = "";
+    document.getElementById("tz-search").value = "";
+    document.getElementById("tz-value").value = "";
+    render();
+  });
+  
+  setInterval(render, 30000);
 });

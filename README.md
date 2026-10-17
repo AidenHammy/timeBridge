@@ -93,7 +93,3 @@ Make your changes to the code, open `chrome://extensions` in Chrome and click th
 - **Manifest V3**: Uses Chrome's modern extension architecture with content scripts injected at `document_idle`.
 - **Delegated Listeners**: Instead of attaching event listeners to every text box on a page, TimeBridge uses a single delegated listener on the document in the capture phase. This helps it catch typing in dynamically loaded elements such as compose boxes created by Slack and Gmail after the page loads.
 - **English-Only Bundling**: Importing the entire `chrono-node` library would be unnecessarily heavy. TimeBridge bundles only the `chrono-node/en` subpath, cutting the bundle size from approximately 400 KB to 100 KB.
-
-## License
-
-MIT. Genuinely do whatever you want with it!

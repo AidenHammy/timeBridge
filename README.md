@@ -1,28 +1,18 @@
 # TimeBridge
 
-**Stop doing mental math every time you schedule a call across time zones**
+**Chrome extension for scheduling calls across time zones without doing the math yourself**
 
-TimeBridge is a Chrome extension that watches as you type in chat apps like Slack, WhatsApp, and Gmail. When it detects a time phrase like *"let's call tomorrow at 3pm"*, it shows a tiny clock icon next to your text box.
-
-Click it and it'll tell you exactly what time that is for the people you're messaging, right where you're already typing. No more opening a new tab for a timezone converter.
+Okay so basically, TimeBridge is a Chrome extension that watches as you type in chat apps like Slack, WhatsApp and Gmail. If you write something like "let's call tomorrow at 3pm" a small clock icon shows up next to your text box. Click it to see what time that is for whoever you're talking to!
 
 [📦 **Download TimeBridge (ZIP)**](https://github.com/AidenHammy/TimeBridge/archive/refs/heads/main.zip) · [🐛 **Report an Issue**](https://github.com/AidenHammy/TimeBridge/issues)
 
 ## Features
 
-- **Live Text Parsing** -> Uses `chrono-node` to understand natural language. It catches phrases like *"tomorrow at 3pm"*, *"next Tuesday at noon"* or *"in 2 hours"*. A 250ms debounce keeps it from parsing every single keystroke.
-- **Passive UI** -> No giant pop-ups or unnecessary interruptions. It's just a tiny 26px clock icon that appears when a time is detected. Click it to see the conversion or ignore it and carry on.
-- **Site Allowlist** -> TimeBridge doesn't run on every website you visit. By default, it only runs on WhatsApp, Slack and Gmail. Add or remove sites through the extension popup whenever you want.
-- **Searchable Timezones** -> Adding a contact doesn't mean scrolling through a massive dropdown of 418 timezones. Just type something like `Europe` and it'll surface appropriate results.
-- **Real-World Aware** -> Built to handle the messy realities of modern web apps. It reads text inside nested formatting spans, works inside iframes and hides the clock immediately when you press Enter to send a message.
-
-## How to Use It
-
-1. Click the TimeBridge extension icon in your browser toolbar.
-2. **Add a contact:** Enter their name, search for their timezone and click **Add Contact**. Your contacts are saved locally using `chrome.storage.local`.
-3. Open Slack, WhatsApp or Gmail and start typing a message that includes a time.
-4. Pause typing for a moment, you'll see a small clock icon appear below your text box.
-5. Click the icon to expand the panel and see what time that translates to for your contact.
+- It uses chrono-node to recognize dates and times when you type them naturally like “tomorrow at 3pm” or “in 2 hours”. It waits for 250 milliseconds before processing what you type so it doesn’t have to check after every single keystroke.
+- There are no annoying pop-ups or anything like that. It's just a small 26px clock icon that shows up when it detects a time. You can click on it to see the converted time or simply ignore it and keep going.
+- TimeBridge only works on certain websites instead of running everywhere you browse. It starts with WhatsApp, Slack and Gmail but you can easily add other sites or remove the ones you don't need from the extension's popup.
+- You don't have to scroll through hundreds of time zones to add a contact. You could just type a name like `Europe` and the relevant options will show up for you to choose from.
+- It’s designed to work smoothly with modern web apps even when things get a little complicated. It can pick up text inside nested formatting elements, work within iframes and make the clock disappear as soon as you hit Enter to send a message.
 
 ### TimeBridge working inside Gmail
 ![TimeBridge working inside Gmail](./images/gmail.png?raw=true)
@@ -33,30 +23,27 @@ Click it and it'll tell you exactly what time that is for the people you're mess
 ### TimeBridge functioning inside WhatsApp Web
 ![TimeBridge functioning inside WhatsApp Web](./images/whatsapp.png?raw=true)
 
+## Install
+
+Since TimeBridge isn't on the Chrome Web Store yet, you'll need to install it manually.
+
+1. Download the ZIP file and extract its contents.
+2. Open chrome://extensions in Chrome and turn on Developer mode.
+3. Click Load unpacked and select the extension/ folder.
+4. Pin TimeBridge to your toolbar, add a contact and try typing a time in Slack to see if it works.
+
+If you also want to use it on file:// pages, you'd have to open the extension's Details page and enable Allow access to file URLs.
+
 ## Permissions
-TimeBridge is built to be as privacy-friendly as possible. Here is exactly what permissions it needs and why~
 
-- storage: Used to save your contacts list and your site allowlist locally in your browser. Surprise nothing syncs to the cloud.
-- activeTab: Used only when you click the "+ Add current site" button in the popup, allowing the extension to read the URL of the tab you're currently on so it can add it to your allowlist.
-- Note on <all_urls>: The manifest requests access to all URLs so the extension can physically run on whatever chat apps you decide to add to your allowlist. However, the content script is designed to do absolutely nothing on sites that aren't explicitly in your allowlist.
+- storage: Saves your contacts and list of allowed websites locally using chrome.storage.local. Your data stays on your device and isn't sent anywhere.
+- activeTab: Used when you click “+ Add current site” in the popup. It lets the extension read the URL of the tab you're currently on.
+- <all_urls>: Allows the content script to run on websites you've added to your allowlist. If a website isn't on that list, the script stays inactive.
 
-## How to Install (Takes 1 Minute)
 
-Since TimeBridge isn't on the Chrome Web Store yet, you'll need to install it manually from the source code.
+## Building from Source
 
-1. Click **Code → Download ZIP** on the GitHub repository page.
-2. Extract the downloaded ZIP file somewhere convenient, like your Desktop or Downloads folder.
-3. Open Chrome and navigate to `chrome://extensions`.
-4. Enable **Developer mode** using the toggle in the top-right corner.
-5. Click **Load unpacked** in the top-left corner.
-6. Select the `extension/` folder inside the directory you just extracted.
-7. Pin the TimeBridge icon to your browser toolbar, add your contacts and you're good to go!
-
-> **Note:** To test TimeBridge on local `file://` pages, open the extension's **Details** page in Chrome and enable **Allow access to file URLs**.
-
-## For Developers (Building from Source)
-
-Want to modify the code or regenerate the natural-language parser yourself? You'll need [Node.js](https://nodejs.org/) installed.
+If you want to work on TimeBridge's code or rebuild its date parser, you'll need Node.js installed first.
 
 ### 1. Clone the Repository
 
@@ -64,32 +51,31 @@ Clone the repository and navigate into the project directory.
 
 ### 2. Install Dependencies
 
-Navigate to the `chrono-test/` directory:
+Open a terminal in the project folder and move into chrono-test:
 
 ```bash
 cd chrono-test
-```
-
-Install the dependencies:
-
-```bash
 npm install
 ```
 
+This installs the packages needed to build the parser.
+
 ### 3. Build the Parser Bundle
 
-Run `esbuild` to generate the parser bundle inside the extension folder:
+TimeBridge uses esbuild to bundle the natural-language parser into a file that the extension can use. From inside chrono-test, run:
 
 ```bash
 npx esbuild bundle-entry.js --bundle --minify --outfile=../extension/vendor/chrono.bundle.js
 ```
 
-### 4. Test Your Changes
+This creates the bundled parser in the extension's vendor folder.
 
-Make your changes to the code, open `chrome://extensions` in Chrome and click the **Reload** button on the TimeBridge extension card to test your latest build!
+### 4. Check your changes
 
-## How It Works (Under the Hood)
+Once you've finished editing the code, open chrome://extensions in Chrome and click Reload on the TimeBridge extension card. This lets you test the updated version.
 
-- **Manifest V3**: Uses Chrome's modern extension architecture with content scripts injected at `document_idle`.
-- **Delegated Listeners**: Instead of attaching event listeners to every text box on a page, TimeBridge uses a single delegated listener on the document in the capture phase. This helps it catch typing in dynamically loaded elements such as compose boxes created by Slack and Gmail after the page loads.
-- **English-Only Bundling**: Importing the entire `chrono-node` library would be unnecessarily heavy. TimeBridge bundles only the `chrono-node/en` subpath, cutting the bundle size from approximately 400 KB to 100 KB.
+## Implementation Notes
+
+- The extension uses Manifest V3 with the content script running at `document_idle`.
+- Instead of adding a listener to every text box, it uses one event listener on the document during the capture phase. This also helps it detect compose boxes that Slack or Gmail add after the page has loaded.
+- It imports only chrono-node/en rather than the full package which reduces the bundle size by about 300 KB.
